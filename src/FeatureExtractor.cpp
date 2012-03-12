@@ -9,13 +9,13 @@ FeatureExtractor::FeatureExtractor(unsigned width, unsigned height) :
 {
 }
 	
-void FeatureExtractor::extractPatches(const std::string& file)
+PatchRepresentation FeatureExtractor::extractPatches(const std::string& file)
 {
     const cv::Mat input = cv::imread(file, 0);
-    extractPatches(input);
+    return extractPatches(input);
 }
    
-void FeatureExtractor::extractPatches(const cv::Mat& img) 
+PatchRepresentation FeatureExtractor::extractPatches(const cv::Mat& img) 
 {
     // Extract keypoints
 	std::vector<cv::KeyPoint> points = extractKeypoints(img);
@@ -23,9 +23,9 @@ void FeatureExtractor::extractPatches(const cv::Mat& img)
     std::cout << " keypoints detected " << points.size() << std::endl;
     
     // Smooth the image for more robustness against
-    // noise when later comparing pixel intensities
-    cv::Mat imgFiltered;     
-    cv::GaussianBlur(img, imgFiltered, cv::Size(7, 7), 2, 2); 
+    // noise when later comparing pixel intensities   
+    PatchRepresentation imagePatches;
+    cv::GaussianBlur(img, imagePatches.image, cv::Size(7, 7), 2, 2); 
     
     // Extract a ROI around the keypoints        
    for (auto it = points.begin(); it != points.end(); it++) {          
@@ -37,13 +37,15 @@ void FeatureExtractor::extractPatches(const cv::Mat& img)
          
          int y1 = std::max(0, (int) (ky - ((int) (height/2))));
          int y2 = std::min(img.size().height, (int) (ky + ((int) (height/2))));
-
-         //std::cout << "x1 " << x1 << " x2 " << x2  << " y1 " << y1 << " y2 " << y2 << std::endl;   
-               
-         cv::Mat window = img(cv::Range(y1, y2), cv::Range(x1, x2));
+         
+         // Create a reference to a 32x32 window around the detected keypoint
+         imagePatches.patches.push_back(imagePatches.image(cv::Range(y1, y2), cv::Range(x1, x2)));
+         
+         // Record the keypoint location
+         imagePatches.centers.push_back(cv::Point(kx, ky));       
    }
     	
- 
+   return imagePatches;
 }
 
 std::vector<cv::KeyPoint> FeatureExtractor::extractKeypoints(const cv::Mat& img)
