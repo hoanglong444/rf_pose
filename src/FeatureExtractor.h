@@ -27,17 +27,18 @@ struct PatchRepresentation {
      * @param p The patch index
      * @return A pair of pixel intensities <m1, m2> from patch p
      */
-    std::pair<uchar, uchar> getRandomPair(int p) {
-        cv::Mat_<uchar> randPoints(2, 2);       
-        cv::randu(randPoints, cv::Scalar(0), cv::Scalar(32)); 
-        std::cout << randPoints << std::endl;
+    std::pair<uchar, uchar> getRandomIntensityPair(int p) {
+        cv::Mat_<uchar> randX(2, 1);   
+        cv::Mat_<uchar> randY(2, 1);           
+        cv::randu(randX, cv::Scalar(0), cv::Scalar(patches[p].size().width)); 
+        cv::randu(randY, cv::Scalar(0), cv::Scalar(patches[p].size().height)); 
+                
+        //std::cout << randX << randY << centers[p] << std::endl;
         
-        return std::make_pair(patches[p].at<uchar>(0,0),
-                              patches[p].at<uchar>(0,0));
+        return std::make_pair(patches[p].at<uchar>(randX.at<uchar>(0, 0), randY.at<uchar>(0, 0)),
+                              patches[p].at<uchar>(randX.at<uchar>(1, 0), randY.at<uchar>(1, 0)));
     };
     
-private:
-    cv::RNG rng;
 };
 
 /**

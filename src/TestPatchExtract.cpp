@@ -11,9 +11,9 @@ FeatureExtractor featExtractor;
 
 PatchRepresentation patch = featExtractor.extractPatches("input.jpg");
 
-auto pair = patch.getRandomPair(0);
+auto pair = patch.getRandomIntensityPair(1);
 
-std::cout << "Intensity " << (int) pair.first << std::endl;
+std::cout << "Intensity " << (int) pair.first << " and " << (int) pair.second << std::endl;
 
 return 0;
 }

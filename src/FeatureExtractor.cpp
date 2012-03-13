@@ -19,9 +19,7 @@ PatchRepresentation FeatureExtractor::extractPatches(const cv::Mat& img)
 {
     // Extract keypoints
 	std::vector<cv::KeyPoint> points = extractKeypoints(img);
-
-    std::cout << " keypoints detected " << points.size() << std::endl;
-    
+   
     // Smooth the image for more robustness against
     // noise when later comparing pixel intensities   
     PatchRepresentation imagePatches;
