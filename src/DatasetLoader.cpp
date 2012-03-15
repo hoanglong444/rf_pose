@@ -29,16 +29,55 @@ DatasetLoader::DatasetLoader(const std::string& filename)
              continue;
             }
          
-            std::cout << dp->d_name << std::endl;;     
+            filenames.push_back(dp->d_name);
         }
     
         closedir(dirp);
     }
 }
 
-//std::string DatasetLoader::getRandomInstances(unsigned n)
+std::vector<std::string> DatasetLoader::getRandomInstances(unsigned n)
+{
+    cv::Mat instancesIdx(n, 1, CV_32S);
+    cv::randu(instancesIdx, 0, filenames.size());
+    std::vector<std::string> chosenFiles;
+    
+    for (unsigned i = 0; i < n; i++) {
+        chosenFiles.push_back(filenames[instancesIdx.at<uint>(i)]);
+    }
+    
+    return chosenFiles;
+}
 
+std::pair<double, double> DatasetLoader::parsePitchYaw(const std::string& filename)
+{
+    size_t pos = filename.find_first_of("+-");
+    std::string angles = filename.substr(pos);
+    angles = angles.substr(0, angles.find(".jpg"));
+   
+    size_t sep = angles.find_last_of("+-");
+    std::string pitchStr = angles.substr(0, sep);
+    std::string yawStr = angles.substr(sep);
+       
+    double pitch, yaw;
+    std::istringstream(pitchStr) >> pitch;
+    std::istringstream(yawStr) >> yaw;
 
+    return std::make_pair(pitch, yaw);
+}
+
+void DatasetLoader::processRandomSubset(unsigned n)
+{
+    auto filenames = getRandomInstances(n);
+    for (auto it = filenames.begin(); it < filenames.end(); it++) {
+        auto angles = parsePitchYaw(*it);
+        processedImages.push_back(extractor.extractPatches(*it, angles.first, angles.second));
+    }
+    
+    std::cout << "Patches " << processedImages.size() << std::endl;
+
+}
+    
 DatasetLoader::~DatasetLoader()
 {
 

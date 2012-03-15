@@ -1,3 +1,6 @@
+#ifndef __FEATURE_EXTRACTOR_H__
+#define __FEATURE_EXTRACTOR_H__
+
 #include <opencv/cv.h>
 #include <vector>
 #include <utility>
@@ -64,3 +67,4 @@ private:
     unsigned height;
 };
 
+#endif
