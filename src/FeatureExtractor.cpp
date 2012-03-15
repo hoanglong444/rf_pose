@@ -19,6 +19,7 @@ ImagePatchRepresentation FeatureExtractor::extractPatches(const cv::Mat& img, do
 {
     // Extract keypoints
 	std::vector<cv::KeyPoint> points = extractKeypoints(img);
+	//std::cout << points.size() << " Keypoints extracted at " << yaw << " " << pitch << std::endl;
    
     // Smooth the image for more robustness against
     // noise when later comparing pixel intensities   

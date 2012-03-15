@@ -2,20 +2,20 @@
 #include <opencv/cv.h>
 
 #include <sstream>
+#include <algorithm>
 
 #include <sys/types.h>
 #include <dirent.h>
 #include <sys/stat.h>
 
 
-DatasetLoader::DatasetLoader(const std::string& filename)
+DatasetLoader::DatasetLoader(const std::string& filename, unsigned width, unsigned height) : extractor(width, height) 
 {
     cv::theRNG().state = time(NULL);
 
-    
-    for (int i = 1; i < 16; i++) {
+    for (unsigned i = 1; i <= POINTING04_N_PEOPLE; i++) {
         std::stringstream ss;
-        ss << filename + "/Personne" << std::setfill('0') << std::setw(2) << i;
+        ss << filename + "/" + POINTING04_PREFIX << std::setfill('0') << std::setw(2) << i;
         std::string path = ss.str();
         
         DIR* dirp = opendir(path.c_str());
@@ -23,13 +23,14 @@ DatasetLoader::DatasetLoader(const std::string& filename)
         struct dirent* dp;
         while ((dp = readdir(dirp)) != NULL) {
             // Skip over directories
+            std::string fullpath = std::string(path + "/" + dp->d_name);
             struct stat fileStat;
-            lstat(std::string(path + "/" + dp->d_name).c_str(), &fileStat);
+            lstat(fullpath.c_str(), &fileStat);
             if(S_ISDIR(fileStat.st_mode)) {
              continue;
             }
          
-            filenames.push_back(dp->d_name);
+            filenames.push_back(fullpath);
         }
     
         closedir(dirp);
@@ -66,18 +67,36 @@ std::pair<double, double> DatasetLoader::parsePitchYaw(const std::string& filena
     return std::make_pair(pitch, yaw);
 }
 
-void DatasetLoader::processRandomSubset(unsigned n)
+void DatasetLoader::processRandomImageSubset(unsigned n)
 {
     auto filenames = getRandomInstances(n);
     for (auto it = filenames.begin(); it < filenames.end(); it++) {
         auto angles = parsePitchYaw(*it);
-        processedImages.push_back(extractor.extractPatches(*it, angles.first, angles.second));
+        
+        std::cout << "Opening " << *it << " ... " << std::endl;
+        auto imageRepresentation = extractor.extractPatches(*it, angles.first, angles.second);
+        processedImages.push_back(imageRepresentation);
+        
+        std::cout << imageRepresentation.patches.size() << " patches extracted. " << std::endl;
+        
+        for (auto it = imageRepresentation.patches.begin(); it < imageRepresentation.patches.end(); it++) {
+            patches.push_back(ImagePatch(&(*it), imageRepresentation.pitch, imageRepresentation.yaw));
+        }
     }
     
-    std::cout << "Patches " << processedImages.size() << std::endl;
-
+    std::random_shuffle(patches.begin(), patches.end());
 }
-    
+
+const std::vector<ImagePatchRepresentation>& DatasetLoader::getProcessedImages()
+{
+    return processedImages;
+}
+
+const std::vector<ImagePatch>& DatasetLoader::getPatches()
+{
+    return patches;
+}
+     
 DatasetLoader::~DatasetLoader()
 {
 
