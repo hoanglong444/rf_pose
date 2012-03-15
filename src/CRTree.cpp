@@ -29,33 +29,32 @@ CRTree::~CRTree()
 }
 
 void CRTree::growTree(const CRPatch& TrData, int samples) {
-	// Get ratio positive patches/negative patches
-	int pos = 0;
 	vector<vector<const PatchFeature*> > TrainSet( TrData.vLPatches.size() );
 	
 	for(unsigned int l=0; l<TrainSet.size(); ++l) {
 		TrainSet[l].resize(TrData.vLPatches[l].size());
-		
-		if(l>0) pos += TrainSet[l].size();
-		
+				
 		for(unsigned int i=0; i<TrainSet[l].size(); ++i) {
 			TrainSet[l][i] = &TrData.vLPatches[l][i];
 		}
 	}
+     
+    // Seed the RNG before generating random tests
+    cv::theRNG().state = time(NULL);
 
-	grow(TrainSet, 0, 0, samples, pos / float(TrainSet[0].size()) );
+	grow(TrainSet, 0, 0, samples);
 }
 
-void CRTree::grow(const vector<vector<const PatchFeature*> >& TrainSet, int node, unsigned int depth, int samples, float pnratio) {
+void CRTree::grow(const vector<vector<const PatchFeature*> >& TrainSet, int node, unsigned int depth, int samples) {
 
-	if(depth<max_depth && TrainSet[1].size()>0) {	
+	if(depth < max_depth && TrainSet[1].size() > 0) {	
 
 		vector<vector<const PatchFeature*> > SetA;
 		vector<vector<const PatchFeature*> > SetB;
 		int test[6];
 
 		// Find optimal test
-		if( optimizeTest(SetA, SetB, TrainSet, test, samples) ) {
+		if(optimizeTest(SetA, SetB, TrainSet, test, samples)) {
 			// Store binary test for current node
 			int* ptT = &treetable[node*7];
 			ptT[0] = -1; ++ptT; 
@@ -64,54 +63,147 @@ void CRTree::grow(const vector<vector<const PatchFeature*> >& TrainSet, int node
 
 			double countA = 0;
 			double countB = 0;
-			for(unsigned int l=0; l<TrainSet.size(); ++l) {
+			for(unsigned int l = 0; l < TrainSet.size(); ++l) {
 				cout << "Final_Split A/B " << l << " " << SetA[l].size() << " " << SetB[l].size() << endl; 
-				countA += SetA[l].size(); countB += SetB[l].size();
-			}
-			for(unsigned int l=0; l<TrainSet.size(); ++l) {
-				cout << "Final_SplitA: " << SetA[l].size()/countA << "% "; 
-			}
-			cout << endl;
-			for(unsigned int l=0; l<TrainSet.size(); ++l) {
-				cout << "Final_SplitB: " << SetB[l].size()/countB << "% "; 
-			}
-			cout << endl;
-
-			// Go left
-			// If enough patches are left continue growing else stop
-			if(SetA[0].size()+SetA[1].size()>min_samples) {
-				grow(SetA, 2*node+1, depth+1, samples, pnratio);
-			} else {
-				makeLeaf(SetA, pnratio, 2*node+1);
+				countA += SetA[l].size(); 
+				countB += SetB[l].size();
 			}
 
-			// Go right
-			// If enough patches are left continue growing else stop
-			if(SetB[0].size()+SetB[1].size()>min_samples) {
-				grow(SetB, 2*node+2, depth+1, samples, pnratio);
+			// If enough patches are left recursively grow left branch
+			if(SetA[0].size() + SetA[1].size() > min_samples) {
+				grow(SetA, 2*node+1, depth+1, samples);
 			} else {
-				makeLeaf(SetB, pnratio, 2*node+2);
+				makeLeaf(SetA, 2*node+1);
+			}
+
+			// If enough patches are left recursively grow right branch
+			if(SetB[0].size() + SetB[1].size() > min_samples) {
+				grow(SetB, 2*node+2, depth+1, samples);
+			} else {
+				makeLeaf(SetB, 2*node+2);
 			}
 
 		} else {
 			// Could not find split (only invalid one leave split)
-			makeLeaf(TrainSet, pnratio, node);
-		}	
-
+			makeLeaf(TrainSet, node);
+		}
 	} else {
 		// Only negative patches are left or maximum depth is reached
-		makeLeaf(TrainSet, pnratio, node);
+		makeLeaf(TrainSet, node);
+	}
+}
+
+void CRTree::generateTest(int* test, unsigned int width, unsigned int height) 
+{
+    // Location of pixel m1 in this patch
+	test[0] = cv::theRNG().uniform(0, width);
+	test[1] = cv::theRNG().uniform(0, height);
+	
+	// Location of pixel m2
+	test[2] = cv::theRNG().uniform(0, width);
+	test[3] = cv::theRNG().uniform(0, height);
+}
+
+bool CRTree::optimizeTest(TrainingSet& SetA, TrainingSet& SetB, const TrainingSet& instances, int* test, unsigned int iter) 
+{
+	// temporary data for split into Set A and Set B
+	TrainingSet tmpA(instances.size());
+	TrainingSet tmpB(instances.size());
+
+	// temporary data for finding best test
+	vector<vector<IntIndex> > valSet(TrainSet.size());
+	double bestSplit = -DBL_MAX;
+	int tmpTest[6];
+
+	bool ret = false;
+	
+	// Find best test
+	for(unsigned int i =0; i<iter; ++i) {
+
+		// reset temporary data for split
+		for(unsigned int l = 0; l < TrainSet.size(); ++l) {
+			tmpA[l].clear();
+			tmpB[l].clear(); 
+		}
+
+		// generate binary test for pixel locations m1 and m2
+		generateTest(&tmpTest[0], TrainSet[1][0]->roi.width, TrainSet[1][0]->roi.height);
+
+		// compute value for each patch
+		evaluateTest(valSet, &tmpTest[0], TrainSet);
+
+		// find min/max values for threshold
+		int vmin = INT_MAX;
+		int vmax = INT_MIN;
+		for(unsigned int l = 0; l < TrainSet.size(); ++l) {
+			if(valSet[l].size() > 0) {
+				if(vmin > valSet[l].front().val)  vmin = valSet[l].front().val;
+				if(vmax < valSet[l].back().val )  vmax = valSet[l].back().val;
+			}
+		}
+		
+		if((vmax - vmin) > 0) {
+			// Find best threshold
+			for(unsigned int j = 0; j < 10; ++j) { 
+				// Generate some random thresholds
+				int tr = cv::theRNG().uniform(vmin, vmax);
+
+				// Split training data into two sets A,B accroding to threshold t 
+				split(tmpA, tmpB, TrainSet, valSet, tr);
+
+				// Do not allow empty set split (all patches end up in set A or B)
+				if( tmpA[0].size() + tmpA[1].size() > 0 && tmpB[0].size() + tmpB[1].size() > 0 ) {
+
+					// Measure quality of split
+					double score = measureInformationGain(tmpA, tmpB);
+
+					// Take binary test with best split
+					if(score > bestSplit) {
+						ret = true;
+						bestSplit = score;
+
+						memcpy(test, tmpTest, sizeof(tmpTest));
+						test[5] = tr;
+
+						SetA = tmpA;
+						SetB = tmpB;
+					}
+				}
+			}
+		}
+	}
+
+	// return true if a valid test has been found
+	// test is invalid if only splits with an empty set A or B has been created
+	return ret;
+}
+
+void CRTree::evaluateTest(EvaluatedTrainingSet& valSet, const int* test, const TrainingSet& TrainSet) {
+
+	for(unsigned int l = 0; l < TrainSet.size(); ++l) {
+		valSet[l].resize(TrainSet[l].size());
+		
+		for(unsigned int i = 0; i < TrainSet[l].size();++i) {
+			// get pixel values 
+			int p1 = (int)*(uchar*)cvPtr2D(ptC, test[1], test[0]);
+			int p2 = (int)*(uchar*)cvPtr2D(ptC, test[3], test[2]);
+		
+			valSet[l][i].val = p1 - p2;
+			valSet[l][i].index = i;			
+		}
+		
+		sort( valSet[l].begin(), valSet[l].end() );
 	}
 }
 
 // Create leaf node from patches 
-void CRTree::makeLeaf(const std::vector<std::vector<const PatchFeature*> >& TrainSet, float pnratio, int node) {
+void CRTree::makeLeaf(const TrainingSet& TrainSet, int node) {
 	// Get pointer
 	treetable[node*7] = num_leaf;
 	LeafNode* ptL = &leaf[num_leaf];
 
 	// Store data
-	ptL->pfg = TrainSet[1].size() / float(pnratio*TrainSet[0].size()+TrainSet[1].size());
+	ptL->pfg = 0; // TODO Do something with that
 	ptL->vCenter.resize( TrainSet[1].size() );
 	for(unsigned int i = 0; i<TrainSet[1].size(); ++i) {
 		ptL->vCenter[i] = TrainSet[1][i]->center;
@@ -121,128 +213,26 @@ void CRTree::makeLeaf(const std::vector<std::vector<const PatchFeature*> >& Trai
 	++num_leaf;
 }
 
-bool CRTree::optimizeTest(vector<vector<const PatchFeature*> >& SetA, vector<vector<const PatchFeature*> >& SetB, const vector<vector<const PatchFeature*> >& TrainSet, int* test, unsigned int iter) {
-	
-	bool found = false;
-
-	// temporary data for split into Set A and Set B
-	vector<vector<const PatchFeature*> > tmpA(TrainSet.size());
-	vector<vector<const PatchFeature*> > tmpB(TrainSet.size());
-
-	// temporary data for finding best test
-	vector<vector<IntIndex> > valSet(TrainSet.size());
-	double tmpDist;
-	// maximize!!!!
-	double bestDist = -DBL_MAX; 
-	int tmpTest[6];
-
-	// Find best test of ITER iterations
-	for(unsigned int i =0; i<iter; ++i) {
-
-		// reset temporary data for split
-		for(unsigned int l =0; l<TrainSet.size(); ++l) {
-			tmpA[l].clear();
-			tmpB[l].clear(); 
-		}
-
-		// generate binary test without threshold
-		generateTest(&tmpTest[0], TrainSet[1][0]->roi.width, TrainSet[1][0]->roi.height, TrainSet[1][0]->vPatch.size());
-
-		// compute value for each patch
-		evaluateTest(valSet, &tmpTest[0], TrainSet);
-
-		// find min/max values for threshold
-		int vmin = INT_MAX;
-		int vmax = INT_MIN;
-		for(unsigned int l = 0; l<TrainSet.size(); ++l) {
-			if(valSet[l].size()>0) {
-				if(vmin>valSet[l].front().val)  vmin = valSet[l].front().val;
-				if(vmax<valSet[l].back().val )  vmax = valSet[l].back().val;
-			}
-		}
-		int d = vmax-vmin;
-
-		if(d>0) {
-
-			// Find best threshold
-			for(unsigned int j=0; j<10; ++j) { 
-
-				// Generate some random thresholds
-				int tr = (cvRandInt( cvRNG ) % (d)) + vmin; 
-
-				// Split training data into two sets A,B accroding to threshold t 
-				split(tmpA, tmpB, TrainSet, valSet, tr);
-
-				// Do not allow empty set split (all patches end up in set A or B)
-				if( tmpA[0].size()+tmpA[1].size()>0 && tmpB[0].size()+tmpB[1].size()>0 ) {
-
-					// Measure quality of split
-					tmpDist = measureInformationGain(tmpA, tmpB);
-
-					// Take binary test with best split
-					if(tmpDist>bestDist) {
-
-						found = true;
-						bestDist = tmpDist;
-						for(int t=0; t<5;++t) test[t] = tmpTest[t];
-						test[5] = tr;
-						SetA = tmpA;
-						SetB = tmpB;
-					}
-
-				}
-
-			} // end for j
-
-		}
-
-	} // end iter
-
-	// return true if a valid test has been found
-	// test is invalid if only splits with an empty set A or B has been created
-	return found;
-}
-
-
-void CRTree::evaluateTest(std::vector<std::vector<IntIndex> >& valSet, const int* test, const std::vector<std::vector<const PatchFeature*> >& TrainSet) {
-	for(unsigned int l=0;l<TrainSet.size();++l) {
-		valSet[l].resize(TrainSet[l].size());
-		for(unsigned int i=0;i<TrainSet[l].size();++i) {
-
-			// pointer to channel
-			CvMat* ptC = TrainSet[l][i]->vPatch[test[4]];
-			// get pixel values 
-			int p1 = (int)*(uchar*)cvPtr2D( ptC, test[1], test[0]);
-			int p2 = (int)*(uchar*)cvPtr2D( ptC, test[3], test[2]);
-		
-			valSet[l][i].val = p1 - p2;
-			valSet[l][i].index = i;			
-		}
-		sort( valSet[l].begin(), valSet[l].end() );
-	}
-}
-
 void CRTree::split(vector<vector<const PatchFeature*> >& SetA, vector<vector<const PatchFeature*> >& SetB, const vector<vector<const PatchFeature*> >& TrainSet, const vector<vector<IntIndex> >& valSet, int t) {
-	for(unsigned int l = 0; l<TrainSet.size(); ++l) {
-		// search largest value such that val<t 
+	for(unsigned int l = 0; l < TrainSet.size(); ++l) {
+		// search largest value such that val < t 
 		vector<IntIndex>::const_iterator it = valSet[l].begin();
-		while(it!=valSet[l].end() && it->val<t) {
+		while(it != valSet[l].end() && it->val < t) {
 			++it;
 		}
 
-		SetA[l].resize(it-valSet[l].begin());
-		SetB[l].resize(TrainSet[l].size()-SetA[l].size());
+		SetA[l].resize(it - valSet[l].begin());
+		SetB[l].resize(TrainSet[l].size() - SetA[l].size());
 
 		it = valSet[l].begin();
-		for(unsigned int i=0; i<SetA[l].size(); ++i, ++it) {
+		for(unsigned int i = 0; i < SetA[l].size(); ++i, ++it) {
 			SetA[l][i] = TrainSet[l][it->index];
 		}
 		
-		it = valSet[l].begin()+SetA[l].size();
-		for(unsigned int i=0; i<SetB[l].size(); ++i, ++it) {
+		it = valSet[l].begin() + SetA[l].size();
+		for(unsigned int i = 0; i < SetB[l].size(); ++i, ++it) {
 			SetB[l][i] = TrainSet[l][it->index];
 		}
-
 	}
 }
 

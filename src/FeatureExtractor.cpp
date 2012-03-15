@@ -9,20 +9,20 @@ FeatureExtractor::FeatureExtractor(unsigned width, unsigned height) :
 {
 }
 	
-PatchRepresentation FeatureExtractor::extractPatches(const std::string& file)
+ImagePatchRepresentation FeatureExtractor::extractPatches(const std::string& file, double yaw, double pitch)
 {
     const cv::Mat input = cv::imread(file, 0);
-    return extractPatches(input);
+    return extractPatches(input, yaw, pitch);
 }
    
-PatchRepresentation FeatureExtractor::extractPatches(const cv::Mat& img) 
+ImagePatchRepresentation FeatureExtractor::extractPatches(const cv::Mat& img, double yaw, double pitch) 
 {
     // Extract keypoints
 	std::vector<cv::KeyPoint> points = extractKeypoints(img);
    
     // Smooth the image for more robustness against
     // noise when later comparing pixel intensities   
-    PatchRepresentation imagePatches;
+    ImagePatchRepresentation imagePatches;
     cv::GaussianBlur(img, imagePatches.image, cv::Size(7, 7), 2, 2); 
     
     // Extract a ROI around the keypoints        
@@ -42,6 +42,9 @@ PatchRepresentation FeatureExtractor::extractPatches(const cv::Mat& img)
          // Record the keypoint location
          imagePatches.centers.push_back(cv::Point(kx, ky));       
    }
+   
+   imagePatches.yaw = yaw;
+   imagePatches.pitch = pitch;
     	
    return imagePatches;
 }

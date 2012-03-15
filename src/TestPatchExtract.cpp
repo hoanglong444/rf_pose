@@ -9,11 +9,7 @@ int main(void)
 {
 FeatureExtractor featExtractor;
 
-PatchRepresentation patch = featExtractor.extractPatches("input.jpg");
-
-auto pair = patch.getRandomIntensityPair(1);
-
-std::cout << "Intensity " << (int) pair.first << " and " << (int) pair.second << std::endl;
+ImagePatchRepresentation patch = featExtractor.extractPatches("input.jpg");
 
 return 0;
 }

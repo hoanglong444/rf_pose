@@ -6,12 +6,11 @@
 #include <iostream>
 /**
  * This class contains the patches 
- * extracted by the FeatureExtrator class. 
+ * extracted by the FeatureExtrator 
+ * for a given image. 
  */
-struct PatchRepresentation {
-    PatchRepresentation() {
-        cv::theRNG().state = time(NULL);
-    }
+struct ImagePatchRepresentation {
+    ImagePatchRepresentation() : yaw(0), pitch(0) {};
     
     // Smoothed image
     cv::Mat image;
@@ -22,23 +21,10 @@ struct PatchRepresentation {
     // Centers for the patches
     std::vector<cv::Point> centers;
     
-    /**
-     * Given a patch p, draw two pixel locations m1 and m2 at random
-     * @param p The patch index
-     * @return A pair of pixel intensities <m1, m2> from patch p
-     */
-    std::pair<uchar, uchar> getRandomIntensityPair(int p) {
-        cv::Mat_<uchar> randX(2, 1);   
-        cv::Mat_<uchar> randY(2, 1);           
-        cv::randu(randX, cv::Scalar(0), cv::Scalar(patches[p].size().width)); 
-        cv::randu(randY, cv::Scalar(0), cv::Scalar(patches[p].size().height)); 
-                
-        //std::cout << randX << randY << centers[p] << std::endl;
-        
-        return std::make_pair(patches[p].at<uchar>(randX.at<uchar>(0, 0), randY.at<uchar>(0, 0)),
-                              patches[p].at<uchar>(randX.at<uchar>(1, 0), randY.at<uchar>(1, 0)));
-    };
+    // Orientation
+    double yaw;
     
+    double pitch;
 };
 
 /**
@@ -55,13 +41,13 @@ public:
      * Extract features from image patches around the detected keypoints
      * @param file Path to file
      */
-    PatchRepresentation extractPatches(const std::string& file);
+    ImagePatchRepresentation extractPatches(const std::string& file, double yaw = 0, double pitch = 0);
     
     /**
      * Extract features from image patches around the detected keypoints
      * @param img A reference to the input image
      */
-    PatchRepresentation extractPatches(const cv::Mat& img);
+    ImagePatchRepresentation extractPatches(const cv::Mat& img, double yaw = 0, double pitch = 0);
 	
 protected:
     /**

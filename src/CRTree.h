@@ -3,20 +3,7 @@
 // Email: gall@vision.ee.ethz.ch
 */
 
-#pragma once
-
-#define sprintf_s sprintf 
-
-#include "CRPatch.h"
-#include <iostream>
-#include <fstream>
-
-// Auxilary structure
-struct IntIndex {
-	int val;
-	unsigned int index;
-	bool operator<(const IntIndex& a) const { return val<a.val; }
-};
+#include "FeatureExtractor.h"
 
 // Structure for the leafs
 struct LeafNode {
@@ -62,20 +49,31 @@ public:
 	void growTree(const PatchRepresentation& training, int samples);
 
 private:
-	void grow(const std::vector<std::vector<const PatchFeature*> >& TrainSet, int node, unsigned int depth, int samples, float pnratio);
+    // Produced by the evaluateTest() function
+    struct IntIndex {
+	    int difference;
+    	unsigned int index;
+	    bool operator<(const IntIndex& a) const { return difference < a.difference; }
+    };
+    
+    typedef std::vector<const ImagePatchRepresentation&> TrainingSet;
+    
+    typedef std::vector<std::vector<IntIndex> > EvaluatedTrainingSet;
+    
+	void evaluateTest(EvaluatedTrainingSet& valSet, const int* test, const TrainingSet& data);
 	
-	void makeLeaf(const std::vector<std::vector<const PatchFeature*> >& TrainSet, float pnratio, int node);
+	void split(TrainingSet& SetA, TrainingSet& SetB, const TrainingSet& data, const EvaluatedTrainingSet& valSet, int t);
 	
-	bool optimizeTest(std::vector<std::vector<const PatchFeature*> >& SetA, std::vector<std::vector<const PatchFeature*> >& SetB, const std::vector<std::vector<const PatchFeature*> >& TrainSet, int* test, unsigned int iter, unsigned int mode);
+	double measureInformationGain(const TrainingSet& SetA, const TrainingSet& SetB);
+		
+	void generateTest(int* test, unsigned int width, unsigned int height);
 	
-	void generateTest(int* test, unsigned int max_w, unsigned int max_h, unsigned int max_c);
+	bool optimizeTest(TrainingSet& SetA, TrainingSet& SetB, const TrainingSet& data, int* test, unsigned int iter);
 	
-	void evaluateTest(std::vector<std::vector<IntIndex> >& valSet, const int* test, const std::vector<std::vector<const PatchFeature*> >& TrainSet);
+	void grow(const TrainingSet& data, int node, unsigned int depth, int samples);
 	
-	void split(std::vector<std::vector<const PatchFeature*> >& SetA, std::vector<std::vector<const PatchFeature*> >& SetB, const std::vector<std::vector<const PatchFeature*> >& TrainSet, const std::vector<std::vector<IntIndex> >& valSet, int t);
+	void makeLeaf(const TrainingSet& data, int node);
 	
-	double measureInformationGain(const std::vector<std::vector<const PatchFeature*> >& SetA, const std::vector<std::vector<const PatchFeature*> >& SetB);
-
 	// Data structure
 	// tree table
 	// 2^(max_depth+1)-1 x 7 matrix as vector
