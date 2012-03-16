@@ -25,52 +25,49 @@ public:
 	/**
 	 * Creates a new tree
 	 * @param minSamples Minimum number of samples. A termination condition
-	 * @param maxDepth Maximum depth.
+	 * @param maxDepth Maximum tree depth during training.
 	 */
-	CRTree(int minSamples, int maxDepth, int cp, CvRNG* pRNG);
+	CRTree(int minSamples=20, int maxDepth=15);
 	
 	~CRTree();
-
-    /**
-     * Maximum training depth
-     * @return the current maximum depth set for training
-     */
-	unsigned int GetDepth() const {return max_depth;}
 	
-	unsigned int GetNumCenter() const {return num_cp;}
-
-	const LeafNode* regression(uchar** ptFCh, int stepImg) const;
+	/**
+	 * Given a patch, compute the estimated pose.
+	 */
+	//const LeafNode* regression(uchar** ptFCh, int stepImg) const;
 
     /**
      * Train tree using n samples from training set.
      * @param training The training data
      * @param n The number of samples
      */
-	void growTree(const PatchRepresentation& training, int samples);
+	void growTree(const std::vector<ImagePatch>& patches);
+	
+	// Number of iterations for optimizing the threshold
+	static constexpr unsigned N_THRESHOLD_IT = 10;
 
 private:
     // Produced by the evaluateTest() function
     struct IntIndex {
+        IntIndex(int difference, unsigned int index) : difference(difference), index(index) {};
+   	    bool operator<(const IntIndex& a) const { return difference < a.difference; }
 	    int difference;
     	unsigned int index;
-	    bool operator<(const IntIndex& a) const { return difference < a.difference; }
     };
     
-    typedef std::vector<const ImagePatchRepresentation&> TrainingSet;
-    
-    typedef std::vector<std::vector<IntIndex> > EvaluatedTrainingSet;
-    
-	void evaluateTest(EvaluatedTrainingSet& valSet, const int* test, const TrainingSet& data);
-	
-	void split(TrainingSet& SetA, TrainingSet& SetB, const TrainingSet& data, const EvaluatedTrainingSet& valSet, int t);
-	
-	double measureInformationGain(const TrainingSet& SetA, const TrainingSet& SetB);
-		
-	void generateTest(int* test, unsigned int width, unsigned int height);
-	
-	bool optimizeTest(TrainingSet& SetA, TrainingSet& SetB, const TrainingSet& data, int* test, unsigned int iter);
-	
+    typedef std::vector<ImagePatch> TrainingSet;   
+			
 	void grow(const TrainingSet& data, int node, unsigned int depth, int samples);
+	
+	bool optimizeTest(TrainingSet& partA, TrainingSet& partB, const TrainingSet& data, unsigned iter, int* test);
+	
+	void generateTest(int* test, unsigned width, unsigned height);	
+	
+	void evaluateTest(const TrainingSet& data, const int* test, std::vector<IntIndex>& valSet);
+	
+	void split(const TrainingSet& data, int tr, std::vector<IntIndex>& valSet, TrainingSet& partA, TrainingSet& partB);	
+	
+	double measureInformationGain(const TrainingSet& parent, const TrainingSet& partA, const TrainingSet& partB);	
 	
 	void makeLeaf(const TrainingSet& data, int node);
 	
@@ -82,16 +79,16 @@ private:
 	int* treetable;
 
 	// stop growing when number of patches is less than min_samples
-	unsigned int min_samples;
+	unsigned int minSamples;
 
 	// depth of the tree: 0-max_depth
-	unsigned int max_depth;
+	unsigned int maxDepth;
 
 	// number of nodes: 2^(max_depth+1)-1
-	unsigned int num_nodes;
+	unsigned int numNodes;
 
 	// number of leafs
-	unsigned int num_leaf;
+	unsigned int numLeaves;
 
 	//leafs as vector
 	LeafNode* leaf;

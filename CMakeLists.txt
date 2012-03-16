@@ -6,8 +6,8 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-O2 -lpthread -std=gnu++0x -Wall")
 endif()
 
-ADD_EXECUTABLE( head_pose src/FeatureExtractor.h src/FeatureExtractor.cpp src/TestPatchExtract.cpp )
-TARGET_LINK_LIBRARIES( head_pose ${OpenCV_LIBS} )
+ADD_EXECUTABLE( run_training src/CRTree.h src/CRTree.cpp src/FeatureExtractor.h src/FeatureExtractor.cpp src/DatasetLoader.h src/DatasetLoader.cpp src/RunTraining.cpp )
+TARGET_LINK_LIBRARIES( run_training ${OpenCV_LIBS} )
 
 
 

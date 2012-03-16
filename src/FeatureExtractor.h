@@ -31,6 +31,18 @@ struct ImagePatchRepresentation {
 };
 
 /**
+ * This class contains the information 
+ * of a patch from a given image.
+ */
+struct ImagePatch 
+{  
+    ImagePatch(cv::Mat const* patch, double pitch, double yaw) : patch(patch), pitch(pitch), yaw(yaw) {};
+    cv::Mat const* patch;
+    double pitch;
+    double yaw;
+};
+
+/**
  * Given an image, this class compute its patch representation.
  */
 class FeatureExtractor {

@@ -6,14 +6,6 @@
 #include <string>
 #include <vector>
 
-struct ImagePatch 
-{  
-    ImagePatch(cv::Mat const* patch, double pitch, double yaw) : patch(patch), pitch(pitch), yaw(yaw) {};
-    cv::Mat const* patch;
-    double pitch;
-    double yaw;
-};
-
 /**
  * This class is meant to load the 
  * images from the Pointing'04 database.
@@ -68,12 +60,15 @@ private:
      */
     std::vector<std::string> getRandomInstances(unsigned n);
         
+    // Contains all the names of the accessible files
     std::vector<std::string> filenames;
     
+    // Contains the result of the patch extraction for each image
     std::vector<ImagePatchRepresentation> processedImages;
     
+    // Contains all the patchs from all the images, randomly shuffled
     std::vector<ImagePatch> patches;
-        
+    
     FeatureExtractor extractor;
 };
 
