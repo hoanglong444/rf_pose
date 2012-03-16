@@ -87,7 +87,7 @@ bool CRTree::optimizeTest(TrainingSet& partA, TrainingSet& partB, const Training
     double bestSplit = -DBL_MAX;
     bool ret = false;
 	
-	std::cout << "Trying to find one of " << iter << " best random test" << std::endl;
+	//std::cout << "Trying to find one of " << iter << " best random test" << std::endl;
 	
 	// Find best test
 	for(unsigned i = 0; i < iter; ++i) {
@@ -106,26 +106,26 @@ bool CRTree::optimizeTest(TrainingSet& partA, TrainingSet& partB, const Training
 		int vmin = valSet.front().difference;
 		int vmax = valSet.back().difference;
 		
-		std::cout << "Difference " << vmax << " - " << vmin << " = " << (vmax - vmin) << std::endl;
+		//std::cout << "Difference " << vmax << " - " << vmin << " = " << (vmax - vmin) << std::endl;
 		if((vmax - vmin) > 0) {
             // Find best threshold
             for(unsigned int j = 0; j < N_THRESHOLD_IT; j++) { 
                 // Generate some random thresholds
                 int tr = cv::theRNG().uniform(vmin, vmax);
-                std::cout << "Random threshold " << tr << std::endl;
+                //std::cout << "Random threshold " << tr << std::endl;
                 
                 // Split training data into two sets A and B accroding to threshold 
                 TrainingSet tmpA;
    	            TrainingSet tmpB;
                 split(data, tr, valSet, tmpA, tmpB);
                 
-                std::cout << "Split A " << tmpA.size() << " split B " << tmpB.size() << std::endl;
+                //std::cout << "Split A " << tmpA.size() << " split B " << tmpB.size() << std::endl;
                 
 				// Do not allow empty set split (all patches end up in set A or B)
-				if((tmpA.size() > 0) && (tmpB.size() > 0)) {
+				if((tmpA.size() > 5) && (tmpB.size() > 5)) {
 					// Measure quality of split
 					double score = measureInformationGain(data, tmpA, tmpB);
-                    std::cout << "Information gain " << score << std::endl;
+                    //std::cout << "Information gain " << score << std::endl;
                     
 					// Take binary test with best split
 					if(score > bestSplit) {
@@ -140,6 +140,8 @@ bool CRTree::optimizeTest(TrainingSet& partA, TrainingSet& partB, const Training
 					}
 				}
 			}
+			
+			std::cout << "Best IG after threshold search " << bestSplit << std::endl;
 		}
 	}
 
@@ -198,8 +200,10 @@ double CRTree::measureInformationGain(const TrainingSet& parent, const TrainingS
 {
     // IG = \log |\Sigm a(P)| - \sum_{i \in \{L, R\}} w_i \log |\Sigma_i (P_i)|
     // w_i = \frac{|P_i|}{|P|}
-    double Wl = partA.size()/parent.size();
-    double Wr = partB.size()/parent.size();
+    double Wl = (double)partA.size()/(double)parent.size();
+    double Wr = (double)partB.size()/(double)parent.size();
+    
+    //std::cout << "Wl " << Wl << " Wr " << Wr << std::endl;
     
     // Compute the covariance matrices
     // Two elements: pitch, yaw
@@ -232,9 +236,11 @@ double CRTree::measureInformationGain(const TrainingSet& parent, const TrainingS
     cv::Mat meanPr(0, 0, CV_32F);
     cv::calcCovarMatrix(Pr, covPr, meanPr, CV_COVAR_ROWS | CV_COVAR_NORMAL | CV_COVAR_SCALE);        
 
-    
     double ig = log(cv::determinant(covP)) - Wr*log(cv::determinant(covPr)) - Wl*log(cv::determinant(covPl));
     
+    if (isinf(ig)) {
+        ig = 0; 
+    }
     return ig;
 }
 
