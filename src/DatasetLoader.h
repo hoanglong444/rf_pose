@@ -16,7 +16,16 @@ public:
     DatasetLoader(const std::string& dirName, unsigned width=16, unsigned height=16);
     
     ~DatasetLoader();
-       
+     
+    /**
+     * Extract patches from a random subset of the dataset
+     * and store the patch representation of every image.
+     * @postcondition n patch representations will be stored
+     * in memory until freed by the descructor or overwritten 
+     * with a subsequent call.
+     */
+     void processRandomImageSubset();
+     
     /**
      * Extract patches from a random subset of the dataset
      * and store the patch representation of every image.

@@ -67,6 +67,11 @@ std::pair<double, double> DatasetLoader::parsePitchYaw(const std::string& filena
     return std::make_pair(pitch, yaw);
 }
 
+void DatasetLoader::processRandomImageSubset()
+{
+    processRandomImageSubset(filenames.size());
+}
+
 void DatasetLoader::processRandomImageSubset(unsigned n)
 {
     auto filenames = getRandomInstances(n);

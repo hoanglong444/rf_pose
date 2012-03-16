@@ -5,6 +5,7 @@
 #include "CRTree.h"
 #include <highgui.h>
 #include <algorithm>
+#include <fstream>
 
 CRTree::CRTree(int minSamples, int maxDepth) : 
     minSamples(minSamples), maxDepth(maxDepth), numLeaves(0)
@@ -44,10 +45,10 @@ void CRTree::grow(const TrainingSet& data, int node, unsigned int depth, int sam
 		return;
 	}
 
+    int test[6];
     TrainingSet partA;
     TrainingSet partB;
-    int test[6];
-
+        
     // Find optimal test
     if(optimizeTest(partA, partB, data, samples, test)) {
         // Store binary test for current node
@@ -177,8 +178,6 @@ void CRTree::evaluateTest(const TrainingSet& data, const int* test, std::vector<
 void CRTree::split(const TrainingSet& data, int tr, std::vector<IntIndex>& valSet, TrainingSet& partA, TrainingSet& partB) 
 {
     // Sorted on the difference m1 - m2
-    //auto cutoff = std::upper_bound(valSet.begin(), valSet.end(), tr,
-    //    [](const int threshold, const IntIndex& a) {return a.difference < threshold;});
     std::vector<IntIndex>::iterator cutoff;
     for (cutoff = valSet.begin(); cutoff < valSet.end(); cutoff++) {
         if ((*cutoff).difference > tr) {
@@ -257,3 +256,50 @@ void CRTree::makeLeaf(const TrainingSet& data, int node) {
     numLeaves += 1;
 }
 
+bool CRTree::saveTree(const std::string& filename) const 
+{
+	std::cout << "Saving tree to file: " << filename << std::endl;
+    std::cout << "Number of nodes: " << numNodes << std::endl;
+    
+	bool done = false;
+
+	std::ofstream out(filename);
+	if(out.is_open()) {
+
+		out << maxDepth << " " << numLeaves << std::endl;
+
+		// save tree nodes
+		int* ptT = &treetable[0];
+		int depth = 0;
+		unsigned int step = 2;
+		for(unsigned int n = 0; n < numNodes; n++) {
+			// get depth from node
+			if(n==step-1) {
+				++depth;
+				step *= 2;
+			}
+
+			out << n << " " << depth << " ";
+			for(unsigned int i=0; i<7; ++i, ++ptT) {
+				out << *ptT << " ";
+			}
+			out << std::endl;
+		}
+		out << std::endl;
+
+		// save tree leafs
+		LeafNode* ptLN = &leaf[0];
+		for(unsigned int l = 0; l < numLeaves; ++l, ++ptLN) {
+			out << l << " " << ptLN->pfg << " ";
+			// TODO Implement this
+			out << std::endl;
+		}
+
+		out.close();
+
+		done = true;
+	}
+
+
+	return done;
+}
