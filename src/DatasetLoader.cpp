@@ -79,8 +79,8 @@ void DatasetLoader::processRandomImageSubset(unsigned n)
         
         std::cout << imageRepresentation.patches.size() << " patches extracted. " << std::endl;
         
-        for (auto it = imageRepresentation.patches.begin(); it < imageRepresentation.patches.end(); it++) {
-            patches.push_back(ImagePatch(&(*it), imageRepresentation.pitch, imageRepresentation.yaw));
+        for (auto itPatches = imageRepresentation.patches.begin(); itPatches < imageRepresentation.patches.end(); itPatches++) {
+            patches.push_back(ImagePatch((*itPatches), imageRepresentation.pitch, imageRepresentation.yaw));
         }
     }
     

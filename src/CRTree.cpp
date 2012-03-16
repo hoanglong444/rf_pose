@@ -25,17 +25,21 @@ CRTree::~CRTree()
     delete[] treetable;
 }
 
-void CRTree::growTree(const std::vector<ImagePatch>& patches) 
+void CRTree::grow(const std::vector<ImagePatch>& patches) 
 {
     // Seed the RNG before generating random tests
     cv::theRNG().state = time(NULL);
 
+    std::cout << "Growing tree ..." << std::endl;
+    
+    std::cout << patches[0].patch << std::endl;
+        
 	grow(patches, 0, 0, patches.size());
 }
 
 void CRTree::grow(const TrainingSet& data, int node, unsigned int depth, int samples) 
 {
-	if(depth < maxDepth) {	
+	if(depth >= maxDepth) {	
 		makeLeaf(data, node);
 		return;
 	}
@@ -73,48 +77,56 @@ void CRTree::grow(const TrainingSet& data, int node, unsigned int depth, int sam
 }
 
 bool CRTree::optimizeTest(TrainingSet& partA, TrainingSet& partB, const TrainingSet& data, unsigned iter, int* test) 
-{
-	// temporary data for split into Set A and Set B
-	TrainingSet tmpA;
-	TrainingSet tmpB;
-
-	// temporary data for finding best test
-	std::vector<IntIndex> valSet;
-	
+{        
+	std::cout << "Processing patch " << data[0].pitch << " " << data[0].yaw << std::endl;
+	        
 	// Get the dim of a patch. They should all be of the same size.
-	double width = (*data[0].patch).size().width;
-	double height = (*data[0].patch).size().height;	
+	double width = data[0].patch.size().width;
+	double height = data[0].patch.size().height;	
 	
     double bestSplit = -DBL_MAX;
     bool ret = false;
 	
+	std::cout << "Trying to find one of " << iter << " best random test" << std::endl;
+	
 	// Find best test
 	for(unsigned i = 0; i < iter; ++i) {
+	    std::cout << "Evaluating random test " << i << std::endl;
+	    
 		// generate binary test for pixel locations m1 and m2
         int tmpTest[6];
 		generateTest(tmpTest, width, height);
 
 		// compute value for each patch
+        // temporary data for finding best test
+        std::vector<IntIndex> valSet;
 		evaluateTest(data, tmpTest, valSet);
 
 		// find min/max values of differences between m1 and m2
 		int vmin = valSet.front().difference;
 		int vmax = valSet.back().difference;
 		
+		std::cout << "Difference " << vmax << " - " << vmin << " = " << (vmax - vmin) << std::endl;
 		if((vmax - vmin) > 0) {
             // Find best threshold
             for(unsigned int j = 0; j < N_THRESHOLD_IT; j++) { 
                 // Generate some random thresholds
                 int tr = cv::theRNG().uniform(vmin, vmax);
+                std::cout << "Random threshold " << tr << std::endl;
                 
                 // Split training data into two sets A and B accroding to threshold 
+                TrainingSet tmpA;
+   	            TrainingSet tmpB;
                 split(data, tr, valSet, tmpA, tmpB);
+                
+                std::cout << "Split A " << tmpA.size() << " split B " << tmpB.size() << std::endl;
                 
 				// Do not allow empty set split (all patches end up in set A or B)
 				if((tmpA.size() > 0) && (tmpB.size() > 0)) {
 					// Measure quality of split
 					double score = measureInformationGain(data, tmpA, tmpB);
-
+                    std::cout << "Information gain " << score << std::endl;
+                    
 					// Take binary test with best split
 					if(score > bestSplit) {
 						ret = true;
@@ -151,8 +163,8 @@ void CRTree::evaluateTest(const TrainingSet& data, const int* test, std::vector<
 {
     unsigned i = 0;
     for (auto it = data.begin(); it < data.end(); it++, i++) {
-        int m1 = (*(*it).patch).at<uchar>(test[1], test[0]);
-        int m2 = (*(*it).patch).at<uchar>(test[3], test[2]);  
+        int m1 = (*it).patch.at<uchar>(test[1], test[0]);
+        int m2 = (*it).patch.at<uchar>(test[3], test[2]);  
         
         valSet.push_back(IntIndex(m1 - m2, i));    
     }
@@ -163,9 +175,15 @@ void CRTree::evaluateTest(const TrainingSet& data, const int* test, std::vector<
 void CRTree::split(const TrainingSet& data, int tr, std::vector<IntIndex>& valSet, TrainingSet& partA, TrainingSet& partB) 
 {
     // Sorted on the difference m1 - m2
-    auto cutoff = std::upper_bound(valSet.begin(), valSet.end(), tr,
-        [](const int threshold, const IntIndex& a) {return a.difference < threshold;});
-    
+    //auto cutoff = std::upper_bound(valSet.begin(), valSet.end(), tr,
+    //    [](const int threshold, const IntIndex& a) {return a.difference < threshold;});
+    std::vector<IntIndex>::iterator cutoff;
+    for (cutoff = valSet.begin(); cutoff < valSet.end(); cutoff++) {
+        if ((*cutoff).difference > tr) {
+            break;
+        }
+    }
+        
     // IntIndex contains index back to training set (unsorted)
     for (auto it = valSet.begin(); it < cutoff; it++) {
         partA.push_back(data[(*it).index]);
@@ -192,7 +210,7 @@ double CRTree::measureInformationGain(const TrainingSet& parent, const TrainingS
     }
     cv::Mat covP(0, 0, CV_32F);
     cv::Mat meanP(0, 0, CV_32F);
-    cv::calcCovarMatrix(P, covP, meanP, CV_COVAR_NORMAL | CV_COVAR_SCALE);    
+    cv::calcCovarMatrix(P, covP, meanP, CV_COVAR_ROWS | CV_COVAR_NORMAL | CV_COVAR_SCALE);    
     
     // Left branch
     cv::Mat Pl(partA.size(), 2, CV_32F);
@@ -202,7 +220,7 @@ double CRTree::measureInformationGain(const TrainingSet& parent, const TrainingS
     }
     cv::Mat covPl(0, 0, CV_32F);
     cv::Mat meanPl(0, 0, CV_32F);
-    cv::calcCovarMatrix(Pl, covPl, meanPl, CV_COVAR_NORMAL | CV_COVAR_SCALE);        
+    cv::calcCovarMatrix(Pl, covPl, meanPl, CV_COVAR_ROWS | CV_COVAR_NORMAL | CV_COVAR_SCALE);        
     
     // Right branch
     cv::Mat Pr(partB.size(), 2, CV_32F);
@@ -212,7 +230,7 @@ double CRTree::measureInformationGain(const TrainingSet& parent, const TrainingS
     }
     cv::Mat covPr(0, 0, CV_32F);
     cv::Mat meanPr(0, 0, CV_32F);
-    cv::calcCovarMatrix(Pr, covPr, meanPr, CV_COVAR_NORMAL | CV_COVAR_SCALE);        
+    cv::calcCovarMatrix(Pr, covPr, meanPr, CV_COVAR_ROWS | CV_COVAR_NORMAL | CV_COVAR_SCALE);        
 
     
     double ig = log(cv::determinant(covP)) - Wr*log(cv::determinant(covPr)) - Wl*log(cv::determinant(covPl));

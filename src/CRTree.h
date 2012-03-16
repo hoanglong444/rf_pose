@@ -41,7 +41,7 @@ public:
      * @param training The training data
      * @param n The number of samples
      */
-	void growTree(const std::vector<ImagePatch>& patches);
+	void grow(const std::vector<ImagePatch>& patches);
 	
 	// Number of iterations for optimizing the threshold
 	static constexpr unsigned N_THRESHOLD_IT = 10;

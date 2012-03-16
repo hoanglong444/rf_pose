@@ -36,8 +36,8 @@ struct ImagePatchRepresentation {
  */
 struct ImagePatch 
 {  
-    ImagePatch(cv::Mat const* patch, double pitch, double yaw) : patch(patch), pitch(pitch), yaw(yaw) {};
-    cv::Mat const* patch;
+    ImagePatch(const cv::Mat& patch, double pitch, double yaw) : patch(patch.clone()), pitch(pitch), yaw(yaw) {};
+    cv::Mat patch;
     double pitch;
     double yaw;
 };
@@ -50,7 +50,7 @@ public:
     /**
      * @param size The window size around a keypoint
      */
-	FeatureExtractor(unsigned width=32, unsigned height=32);
+	FeatureExtractor(unsigned width=16, unsigned height=16);
 
     /**
      * Extract features from image patches around the detected keypoints
