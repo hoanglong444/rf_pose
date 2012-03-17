@@ -55,7 +55,7 @@ public:
 private:
     // Produced by the evaluateTest() function
     struct IntIndex {
-        IntIndex(int difference, unsigned int index) : difference(difference), index(index) {};
+        IntIndex(int difference=0, unsigned int index=0) : difference(difference), index(index) {};
    	    bool operator<(const IntIndex& a) const { return difference < a.difference; }
 	    int difference;
     	unsigned int index;
@@ -98,5 +98,7 @@ private:
 
 	//leafs as vector
 	LeafNode* leaf;
+	
+    std::vector<IntIndex> valSet;
 };
 
