@@ -98,7 +98,5 @@ private:
 
 	//leafs as vector
 	LeafNode* leaf;
-	
-    std::vector<IntIndex> valSet;
 };
 

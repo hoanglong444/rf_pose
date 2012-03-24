@@ -33,8 +33,6 @@ void CRTree::grow(const std::vector<ImagePatch>& patches)
 
     std::cout << "Growing tree ..." << std::endl;
     
-    valSet.resize(patches.size());   
-    
 	grow(patches, 0, 0, patches.size());
 }
 
@@ -81,13 +79,14 @@ bool CRTree::optimizeTest(TrainingSet& partA, TrainingSet& partB, const Training
 {        
 	std::cout << "Processing patch " << data[0].pitch << " " << data[0].yaw << std::endl;
 	        
-	// Get the dim of a patch. They should all be of the same size.
+	// Get the tdim of a patch. They should all be of the same size.
 	double width = data[0].patch.size().width;
 	double height = data[0].patch.size().height;	
 	
     double bestSplit = -DBL_MAX;
     bool ret = false;
-	
+	std::vector<IntIndex> valSet(data.size());
+	    
 	// Find best test
 	for(unsigned i = 0; i < iter; ++i) {
 	    std::cout << "Evaluating random test " << i << std::endl;
