@@ -1,87 +1,35 @@
-/* 
-// Author: Juergen Gall, BIWI, ETH Zurich
-// Email: gall@vision.ee.ethz.ch
-*/
-
-#pragma once
-
-#include "CRTree.h"
-
+/**
+ * Pierre-Luc Bacon <plbacon@cim.mcgill.ca>
+ */
+#include "FeatureExtractor.h"
 #include <vector>
 
-class CRForest {
+// Forward declaration
+class CRTree;
+class LeafNode;
+
+/**
+ * This class loads trees from a directory and collects estimates from 
+ * every trees when a sample must be evaluated.
+ */
+class CRForest 
+{
 public:
-	CRForest(int trees = 0) {
-		vTrees.resize(trees);
-	}
+    /**
+     * Load a forest from a diretory containing serialized trees
+     * @param dir The path to a directory containing the trees
+     */
+	CRForest(const std::string& dir);
 	
-	~CRForest() {
-		for(auto it = vTrees.begin(); it != vTrees.end(); ++it) {
-		    delete *it;
-		}
-		vTrees.clear();
-	}
+	~CRForest();
 
-	// Set/Get functions
-	void SetTrees(int n) {
-	     vTrees.resize(n);
-	}
-	
-	int GetSize() const {
-	    return vTrees.size();
-	}
-	
-	unsigned int GetDepth() const {
-	    return vTrees[0]->GetDepth();
-	}
-	
-	unsigned int GetNumCenter() const {
-	    return vTrees[0]->GetNumCenter();
-	}
-	
-	// Regression 
-	void regression(std::vector<const LeafNode*>& result, uchar** ptFCh, int stepImg) const;
+    /**
+     * Drop a patch in every tree return the estimates at the leaves 
+     * @param 
+     */
+    void regression(const ImagePatch& patch, std::vector<const LeafNode*>& outLeaves);
 
-	// Training
-	void trainForest(int min_s, int max_d, CvRNG* pRNG, const CRPatch& TrData, int samples);
-
-	// IO functions
-	void saveForest(const char* filename, unsigned int offset = 0);
-	
-	void loadForest(const char* filename, int type = 0);
-	
-	void show(int w, int h) const {vTrees[0]->showLeaves(w,h);}
-
-	// Trees
-	std::vector<CRTree*> vTrees;
+private:
+	std::vector<CRTree*> trees;
 };
 
-inline void CRForest::regression(std::vector<const LeafNode*>& result, uchar** ptFCh, int stepImg) const {
-	result.resize( vTrees.size() );
-	for(int i=0; i<(int)vTrees.size(); ++i) {
-		result[i] = vTrees[i]->regression(ptFCh, stepImg);
-	}
-}
-
-inline void CRForest::trainForest(int min_s, int max_d, CvRNG* pRNG, const CRPatch& TrData, int samples) {
-	for(int i=0; i < (int)vTrees.size(); ++i) {
-		vTrees[i] = new CRTree(min_s, max_d, TrData.vLPatches[1][0].center.size(), pRNG);
-		vTrees[i]->growTree(TrData, samples);
-	}
-}
-
-inline void CRForest::saveForest(const char* filename, unsigned int offset) {
-	char buffer[200];
-	for(unsigned int i=0; i<vTrees.size(); ++i) {
-		sprintf_s(buffer,"%s%03d.txt",filename,i+offset);
-		vTrees[i]->saveTree(buffer);
-	}
-}
-
-inline void CRForest::loadForest(const char* filename, int type) {
-	char buffer[200];
-	for(unsigned int i=0; i<vTrees.size(); ++i) {
-		sprintf_s(buffer,"%s%03d.txt",filename,i);
-		vTrees[i] = new CRTree(buffer);
-	}
-}

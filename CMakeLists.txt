@@ -7,7 +7,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_SHARED_LINKER_FLAGS "-pg")
 endif()
 
-ADD_EXECUTABLE( run_training src/CRTree.h src/CRTree.cpp src/FeatureExtractor.h src/FeatureExtractor.cpp src/DatasetLoader.h src/DatasetLoader.cpp src/RunTraining.cpp )
+ADD_EXECUTABLE( run_training src/CRTree.h src/CRTree.cpp src/CRForest.h src/CRForest.cpp src/FeatureExtractor.h src/FeatureExtractor.cpp src/DatasetLoader.h src/DatasetLoader.cpp src/RunTraining.cpp )
 TARGET_LINK_LIBRARIES( run_training ${OpenCV_LIBS} )
 
 

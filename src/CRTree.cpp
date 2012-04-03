@@ -279,8 +279,6 @@ void CRTree::makeLeaf(std::vector<ImagePatch*>& data, int node) {
 
 bool CRTree::loadTree(const std::string& filename)
 {
-   std::cout << "Loading tree from file " << filename << std::endl;
-
 	int dummy;
     std::ifstream file(filename);
 	if(file.is_open()) {
@@ -330,6 +328,19 @@ bool CRTree::loadTree(const std::string& filename)
 
 	file.close();
     return true;
+}
+
+bool CRTree::saveTree() const
+{
+  time_t rawtime;
+  time (&rawtime);
+  struct tm* timeinfo;
+  timeinfo = localtime (&rawtime);
+
+  char buffer[80];
+  strftime (buffer, sizeof(buffer), "%m-%d-%y-%X", timeinfo);
+
+  return saveTree(std::string("random-tree-") + buffer); 
 }
 
 bool CRTree::saveTree(const std::string& filename) const 

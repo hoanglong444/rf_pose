@@ -51,6 +51,11 @@ public:
 	 * @param filename The output filename
 	 */
 	bool saveTree(const std::string& filename) const;
+
+    /**
+     * Save the tree table to a file with a time stamp 
+     */
+	bool saveTree() const;
 	
 	// Number of iterations for optimizing the threshold
 	static constexpr unsigned N_THRESHOLD_IT = 10;
