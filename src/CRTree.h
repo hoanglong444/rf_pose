@@ -11,7 +11,7 @@ struct LeafNode {
 	LeafNode() {}
 	
 	// Probability of belonging to a head
-	float pfg;
+	cv::Mat cov;
 	
 	// mean vector
 	cv::Mat mean;
@@ -41,7 +41,7 @@ public:
      * @param training The training data
      * @param n The number of samples
      */
-	void grow(const std::vector<ImagePatch>& patches);
+	void grow(std::vector<ImagePatch>& patches);
 	
 	/**
 	 * Save the tree table to a file
@@ -63,19 +63,19 @@ private:
     
     typedef std::vector<ImagePatch> TrainingSet;   
 			
-	void grow(const TrainingSet& data, int node, unsigned int depth, int samples);
+	void grow(std::vector<ImagePatch*>& data, int node, unsigned int depth, int samples);
 	
-	bool optimizeTest(TrainingSet& partA, TrainingSet& partB, const TrainingSet& data, unsigned iter, int* test);
+	bool optimizeTest(std::vector<ImagePatch*>& partA, std::vector<ImagePatch*>& partB, std::vector<ImagePatch*>& data, unsigned iter, int* test);
 	
 	void generateTest(int* test, unsigned width, unsigned height);	
 	
-	void evaluateTest(const TrainingSet& data, const int* test, std::vector<IntIndex>& valSet);
+	void evaluateTest(std::vector<ImagePatch*>& data, const int* test, std::vector<IntIndex>& valSet);
 	
-	void split(const TrainingSet& data, int tr, std::vector<IntIndex>& valSet, TrainingSet& partA, TrainingSet& partB);	
+	void split(std::vector<ImagePatch*>& data, int tr, std::vector<IntIndex>& valSet, std::vector<ImagePatch*>& partA, std::vector<ImagePatch*>& partB);	
 	
-	double measureInformationGain(const TrainingSet& parent, const TrainingSet& partA, const TrainingSet& partB);	
+	double measureInformationGain(std::vector<ImagePatch*>& parent, std::vector<ImagePatch*>& partA, std::vector<ImagePatch*>& partB);	
 	
-	void makeLeaf(const TrainingSet& data, int node);
+	void makeLeaf(std::vector<ImagePatch*>& data, int node);
 	
 	// Data structure
 	// tree table
@@ -97,6 +97,6 @@ private:
 	unsigned int numLeaves;
 
 	//leafs as vector
-	LeafNode* leaf;
+	LeafNode* leaves;
 };
 

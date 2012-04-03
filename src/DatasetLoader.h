@@ -16,7 +16,13 @@ public:
     DatasetLoader(const std::string& dirName, unsigned width=16, unsigned height=16);
     
     ~DatasetLoader();
-     
+
+    /**
+     * Get the number of images that can be processed.
+     * @return The number of images available. 
+     */ 
+    size_t getNumberImages();
+
     /**
      * Extract patches from a random subset of the dataset
      * and store the patch representation of every image.

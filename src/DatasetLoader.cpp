@@ -37,6 +37,11 @@ DatasetLoader::DatasetLoader(const std::string& filename, unsigned width, unsign
     }
 }
 
+size_t DatasetLoader::getNumberImages()
+{
+    return filenames.size();
+}
+
 std::vector<std::string> DatasetLoader::getRandomInstances(unsigned n)
 {
     cv::Mat instancesIdx(n, 1, CV_32S);
