@@ -33,9 +33,11 @@ public:
 	~CRTree();
 	
 	/**
-	 * Given a patch, compute the estimated pose.
+	 * Drop a patch down the tree and retreive the final leaf
+     * @param patch An image patch to evaluate
+     * @return A leaf node object containing the parameters for the distribution of interest 
 	 */
-	//const LeafNode* regression(uchar** ptFCh, int stepImg) const;
+    const LeafNode* regression(const ImagePatch& patch) const; 
 
     /**
      * Train tree using n samples from training set.

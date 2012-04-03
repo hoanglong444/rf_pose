@@ -377,3 +377,24 @@ bool CRTree::saveTree(const std::string& filename) const
 
 	return done;
 }
+
+const LeafNode* CRTree::regression(const ImagePatch& impatch) const {
+	int node = 0;
+	const int* pnode = &treetable[0];
+
+	// Go through tree until one arrives at a leaf. -1 means internal node
+	while(pnode[0]==-1) {
+        int m1 = impatch.patch.at<uchar>(pnode[2], pnode[1]);
+        int m2 = impatch.patch.at<uchar>(pnode[4], pnode[3]);  
+
+		bool test = (m1 - m2) >= pnode[6];
+
+        // 2n + 1 : Left
+        // 2n + 2 : Right
+		int incr = node + 1 + test;
+		node += incr;
+		pnode += incr * 7;
+	}
+
+	return &leaves[pnode[0]];
+}
