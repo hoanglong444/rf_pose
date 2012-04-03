@@ -16,6 +16,9 @@ int main(void)
     tree.grow(patches);
     
     tree.saveTree("testTrain.txt");
+
+    CRTree tree2("testTrain.txt");
+    tree2.saveTree("testTrain2.txt");
         
     return 0;
 }

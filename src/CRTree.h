@@ -23,6 +23,12 @@ public:
 	 * @param maxDepth Maximum tree depth during training.
 	 */
 	CRTree(int minSamples=20, int maxDepth=15);
+
+    /**
+     * Loads an actual serialized tree stored in a file.
+     * @param filename Path to the file
+     */
+    CRTree(const std::string& filename);
 	
 	~CRTree();
 	
@@ -71,6 +77,8 @@ private:
 	double measureInformationGain(std::vector<ImagePatch*>& parent, std::vector<ImagePatch*>& partA, std::vector<ImagePatch*>& partB);	
 	
 	void makeLeaf(std::vector<ImagePatch*>& data, int node);
+
+    bool loadTree(const std::string& filename);
 	
 	// Data structure
 	// tree table

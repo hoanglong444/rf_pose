@@ -23,6 +23,11 @@ CRTree::CRTree(int minSamples, int maxDepth) :
 	// allocate memory for leafs
 	leaves = new LeafNode[(int) pow(2.0, int(maxDepth))];
 }
+
+CRTree::CRTree(const std::string& filename)
+{
+    loadTree(filename);
+}
 	
 CRTree::~CRTree() 
 {
@@ -272,6 +277,61 @@ void CRTree::makeLeaf(std::vector<ImagePatch*>& data, int node) {
     numLeaves += 1;
 }
 
+bool CRTree::loadTree(const std::string& filename)
+{
+   std::cout << "Loading tree from file " << filename << std::endl;
+
+	int dummy;
+    std::ifstream file(filename);
+	if(file.is_open()) {
+		// allocate memory for tree table
+		file >> maxDepth;
+		numNodes = (int)pow(2.0,int(maxDepth+1))-1;
+
+		// num_nodes x 7 matrix as vector
+		treetable = new int[numNodes * 7];
+		int* ptT = &treetable[0];
+		
+		// allocate memory for leafs
+		file >> numLeaves;
+		leaves = new LeafNode[numLeaves];
+
+		// read tree nodes
+		for(unsigned int n = 0; n < numNodes; ++n) {
+			file >> dummy; file >> dummy;
+			for(unsigned int i = 0; i < 7; ++i, ++ptT) {
+				file >> *ptT;
+			}
+		}
+
+		// read tree leafs
+		LeafNode* ptLN = &leaves[0];
+		for(unsigned int l = 0; l < numLeaves; ++l, ++ptLN) {
+			file >> dummy;
+
+            cv::Mat meanPr(1, 2, CV_32F);
+			file >> meanPr.at<float>(0, 0);
+            file >> meanPr.at<float>(0, 1);
+			
+            cv::Mat covPr(2, 2, CV_32F);
+            file >> covPr.at<float>(0, 0);
+            file >> covPr.at<float>(0, 1);
+            file >> covPr.at<float>(1, 0);
+            file >> covPr.at<float>(1, 1);
+
+            ptLN->mean = meanPr;
+            ptLN->cov = covPr;
+		}
+
+	} else {
+        std::cerr << "Could not read tree: " << filename << std::endl;
+        return false;
+	}
+
+	file.close();
+    return true;
+}
+
 bool CRTree::saveTree(const std::string& filename) const 
 {
 	std::cout << "Saving tree to file: " << filename << " ... "  << std::endl;
@@ -306,7 +366,7 @@ bool CRTree::saveTree(const std::string& filename) const
         // Write leaves
 		LeafNode* ptLN = &leaves[0];
 		for(unsigned int l = 0; l < numLeaves; ++l, ++ptLN) {
-			out << l << " " << std::setprecision(std::numeric_limits<double>::digits10)
+			out << l << " " 
                 << ptLN->mean.at<float>(0, 1) << " " << ptLN->mean.at<float>(0, 1)
                 << " " << ptLN->cov.at<float>(0, 0) << " " << ptLN->cov.at<float>(0, 1) 
                 << " " << ptLN->cov.at<float>(1, 0) << " " << ptLN->cov.at<float>(1, 1) << std::endl;
