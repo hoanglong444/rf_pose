@@ -45,18 +45,29 @@ void PoseEstimator::extractPatches(const cv::Mat& img, std::vector<cv::Mat>& ima
     }
 }
 
-std::tuple<float, float> PoseEstimator::estimate(const std::string& filename)
+std::tuple<float, float> PoseEstimator::estimate(const std::string& filename, double maxVariance)
 {
     const cv::Mat input = cv::imread(filename, 0);
     return estimate(input);
 }
 
-std::tuple<float, float> PoseEstimator::estimate(const cv::Mat& img)
+std::tuple<float, float> PoseEstimator::estimate(const cv::Mat& img, double maxVariance)
 {
     std::vector<cv::Mat> imagePatches;
     extractPatches(img, imagePatches);
 
-    auto leaves = forest.regression(path);    
+    for (auto patch : imagePatches) {
+        std::vector<const LeafNode*> leaves;
+        forest.regression(patch, leaves);    
+
+        // Combine the Gaussians from each leaf
+        for (auto leaf : leaves) {
+            if (cv::trace(leaf->cov)[0] > maxVariance) {
+                continue;
+            }
+            std::cout << "Trace " << cv::trace(leaf->cov)[0] << std::endl;
+        }
+    }
 
     return std::tuple<float, float>(0.0, 0.0);
 }

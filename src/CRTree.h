@@ -37,7 +37,7 @@ public:
      * @param patch An image patch to evaluate
      * @return A leaf node object containing the parameters for the distribution of interest 
 	 */
-    const LeafNode* regression(const ImagePatch& patch) const; 
+    const LeafNode* regression(const cv::Mat& patch) const; 
 
     /**
      * Train tree using n samples from training set.

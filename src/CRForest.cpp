@@ -34,7 +34,7 @@ CRForest::~CRForest()
     trees.clear();
 }
 
-void CRForest::regression(const ImagePatch& patch, std::vector<const LeafNode*>& outLeaves)
+void CRForest::regression(const cv::Mat& patch, std::vector<const LeafNode*>& outLeaves) const
 {
 	outLeaves.resize(trees.size());
 

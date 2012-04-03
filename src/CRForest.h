@@ -27,7 +27,7 @@ public:
      * Drop a patch in every tree return the estimates at the leaves 
      * @param 
      */
-    void regression(const ImagePatch& patch, std::vector<const LeafNode*>& outLeaves);
+    void regression(const cv::Mat& patch, std::vector<const LeafNode*>& outLeaves) const;
 
 private:
 	std::vector<CRTree*> trees;
