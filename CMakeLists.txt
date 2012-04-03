@@ -7,9 +7,15 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_SHARED_LINKER_FLAGS "-pg")
 endif()
 
-ADD_EXECUTABLE( run_training src/CRTree.h src/CRTree.cpp src/CRForest.h src/CRForest.cpp src/FeatureExtractor.h src/FeatureExtractor.cpp src/DatasetLoader.h src/DatasetLoader.cpp src/RunTraining.cpp )
-TARGET_LINK_LIBRARIES( run_training ${OpenCV_LIBS} )
+ADD_LIBRARY(RandomForest
+    src/CRTree.cpp
+    src/CRForest.cpp
+    src/FeatureExtractor.cpp
+    src/DatasetLoader.cpp)
+TARGET_LINK_LIBRARIES(RandomForest ${OpenCV_LIBS})
 
+ADD_EXECUTABLE(run_training src/RunTraining.cpp)
+TARGET_LINK_LIBRARIES(run_training ${OpenCV_LIBS} RandomForest)
 
-
-
+ADD_EXECUTABLE(run_testing src/PoseEstimator.cpp src/RunTesting.cpp)
+TARGET_LINK_LIBRARIES(run_testing ${OpenCV_LIBS} RandomForest)
