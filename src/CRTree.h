@@ -9,15 +9,10 @@
 struct LeafNode {
 	// Constructors
 	LeafNode() {}
-	
-	// Probability of belonging to a head
+    // Empirical covariance matrix	
 	cv::Mat cov;
-	
-	// mean vector
+    // Empirical mean	
 	cv::Mat mean;
-	
-	// trace of the covariance matrix
-	float trace;
 };
 
 class CRTree {
@@ -84,6 +79,9 @@ private:
 	// if node is not a leaf, leaf=-1
 	int* treetable;
 
+	//leafs as vector
+	LeafNode* leaves;
+
 	// stop growing when number of patches is less than min_samples
 	unsigned int minSamples;
 
@@ -95,8 +93,5 @@ private:
 
 	// number of leafs
 	unsigned int numLeaves;
-
-	//leafs as vector
-	LeafNode* leaves;
 };
 

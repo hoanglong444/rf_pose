@@ -28,6 +28,7 @@ struct ImagePatchRepresentation {
     double yaw;
     
     double pitch;
+    
 };
 
 /**
@@ -40,6 +41,7 @@ struct ImagePatch
     cv::Mat patch;
     double pitch;
     double yaw;
+    //~ImagePatch() { std::cerr << "********* dest called" << std::endl; }
 };
 
 /**

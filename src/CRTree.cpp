@@ -1,11 +1,15 @@
-/* 
-// Author: Juergen Gall, BIWI, ETH Zurich
-// Email: gall@vision.ee.ethz.ch
-*/
+/**
+ * Author: Pierre-Luc Bacon <pierrelucbacon@aqra.ca>
+ *
+ * Work derived from Juergen Gall, BIWI, ETH Zurich <gall@vision.ee.ethz.ch>
+ */
 #include "CRTree.h"
-#include <highgui.h>
+
+#include <opencv/cv.h>
 #include <algorithm>
 #include <fstream>
+#include <iomanip>
+#include <limits>
 
 CRTree::CRTree(int minSamples, int maxDepth) : 
     minSamples(minSamples), maxDepth(maxDepth), numLeaves(0)
@@ -64,7 +68,6 @@ void CRTree::grow(std::vector<ImagePatch*>& data, int node, unsigned int depth, 
         for(int t = 0; t < 6; ++t)
             ptT[t] = test[t];
         std::cout << "Binary test stored at current node..." << std::endl;
-        std::cout << "Part A " << partA.size() << " Part B " << partB.size() << " Min sample " << minSamples << std::endl;
 
         // If enough patches are left recursively grow left branch
         if(partA.size() > minSamples) {
@@ -84,7 +87,7 @@ void CRTree::grow(std::vector<ImagePatch*>& data, int node, unsigned int depth, 
             makeLeaf(partB, 2*node+2);
         }
     } else {
-        std::cerr << "Could not find valid split" << std::endl;
+        std::cerr << "*************** Could not find valid split. Making leaf." << std::endl;
         // Could not find split (only invalid one leave split)
         makeLeaf(data, node);
     }
@@ -147,8 +150,6 @@ bool CRTree::optimizeTest(std::vector<ImagePatch*>& partA, std::vector<ImagePatc
 					}
 				}
 			}
-			
-			//std::cout << "Best IG for test " << i << " after threshold search " << bestSplit << std::endl;
 		}
 	}
 
@@ -251,7 +252,7 @@ double CRTree::measureInformationGain(std::vector<ImagePatch*>& parent, std::vec
 
 // Create leaf node from patches 
 void CRTree::makeLeaf(std::vector<ImagePatch*>& data, int node) {
-    std::cout << "Making leaf " << numLeaves << " " << data.size() << std::endl;
+    std::cout << "Making leaf " << numLeaves << " with " << data.size() << " samples remaining " << std::endl;
             
 	// Get pointer
 	treetable[node*7] = numLeaves;
@@ -273,48 +274,46 @@ void CRTree::makeLeaf(std::vector<ImagePatch*>& data, int node) {
 
 bool CRTree::saveTree(const std::string& filename) const 
 {
-	std::cout << "Saving tree to file: " << filename << std::endl;
-    std::cout << "Number of nodes: " << numNodes << std::endl;
+	std::cout << "Saving tree to file: " << filename << " ... "  << std::endl;
     
 	bool done = false;
 
 	std::ofstream out(filename);
 	if(out.is_open()) {
-
+        // Write header: max depth & number of leaves
 		out << maxDepth << " " << numLeaves << std::endl;
 
-		// save tree nodes
+        // Write internal nodes
 		int* ptT = &treetable[0];
 		int depth = 0;
 		unsigned int step = 2;
 		for(unsigned int n = 0; n < numNodes; n++) {
-			// get depth from node
-			if(n==step-1) {
+			// Compute depth of node n 
+			if(n == step-1) {
 				++depth;
 				step *= 2;
 			}
 
+            // Write node information and associated test on a line
 			out << n << " " << depth << " ";
-			for(unsigned int i=0; i<7; ++i, ++ptT) {
+			for(unsigned int i = 0; i < 7; ++i, ++ptT) {
 				out << *ptT << " ";
 			}
 			out << std::endl;
 		}
 		out << std::endl;
 
-		// save tree leafs
+        // Write leaves
 		LeafNode* ptLN = &leaves[0];
 		for(unsigned int l = 0; l < numLeaves; ++l, ++ptLN) {
-			out << l << " " << ptLN->cov << " ";
-			// TODO Implement this
-			out << std::endl;
+			out << l << " " << std::setprecision(std::numeric_limits<double>::digits10)
+                << ptLN->mean.at<float>(0, 1) << " " << ptLN->mean.at<float>(0, 1)
+                << " " << ptLN->cov.at<float>(0, 0) << " " << ptLN->cov.at<float>(0, 1) 
+                << " " << ptLN->cov.at<float>(1, 0) << " " << ptLN->cov.at<float>(1, 1) << std::endl;
 		}
-
 		out.close();
-
 		done = true;
 	}
-
 
 	return done;
 }
