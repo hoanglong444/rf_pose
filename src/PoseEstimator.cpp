@@ -56,6 +56,9 @@ std::tuple<float, float> PoseEstimator::estimate(const cv::Mat& img, double maxV
     std::vector<cv::Mat> imagePatches;
     extractPatches(img, imagePatches);
 
+    cv::Mat combinedMean(1, 2, CV_32F);
+    cv::Mat combinedCov(2, 2, CV_32F);
+
     for (auto patch : imagePatches) {
         std::vector<const LeafNode*> leaves;
         forest.regression(patch, leaves);    
@@ -65,9 +68,13 @@ std::tuple<float, float> PoseEstimator::estimate(const cv::Mat& img, double maxV
             if (cv::trace(leaf->cov)[0] > maxVariance) {
                 continue;
             }
-            std::cout << "Trace " << cv::trace(leaf->cov)[0] << std::endl;
+            //std::cout << "Trace " << cv::trace(leaf->cov)[0] << std::endl;
+            combinedMean += leaf->mean;
+            combinedCov += leaf->cov;
         }
     }
+
+    std::cout << "Combined mean" << combinedMean << std::endl;
 
     return std::tuple<float, float>(0.0, 0.0);
 }
