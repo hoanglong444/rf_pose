@@ -257,7 +257,7 @@ double CRTree::measureInformationGain(std::vector<ImagePatch*>& parent, std::vec
 
 // Create leaf node from patches 
 void CRTree::makeLeaf(std::vector<ImagePatch*>& data, int node) {
-    std::cout << "Making leaf " << numLeaves << " with " << data.size() << " samples remaining " << std::endl;
+    std::cout << "Making leaf " << numLeaves << " with " << data.size() << " samples." << std::endl;
             
 	// Get pointer
 	treetable[node*7] = numLeaves;
@@ -265,12 +265,12 @@ void CRTree::makeLeaf(std::vector<ImagePatch*>& data, int node) {
 
 	// Store sigma and mu
 	if (data.size() > 0) {
-    cv::Mat P(data.size(), 2, CV_64F);
-    for (unsigned i = 0; i < data.size(); i++) {
-        P.at<double>(i, 0) = data[i]->pitch;
-        P.at<double>(i, 1) = data[i]->yaw;        
-    }
-    cv::calcCovarMatrix(P, leaf->cov, leaf->mean, CV_COVAR_ROWS | CV_COVAR_NORMAL | CV_COVAR_SCALE);   
+        cv::Mat P(data.size(), 2, CV_64F);
+        for (unsigned i = 0; i < data.size(); i++) {
+            P.at<double>(i, 0) = data[i]->pitch;
+            P.at<double>(i, 1) = data[i]->yaw;        
+        }
+        cv::calcCovarMatrix(P, leaf->cov, leaf->mean, CV_COVAR_ROWS | CV_COVAR_NORMAL | CV_COVAR_SCALE);   
     }
     
 	// Increase leaf counter
@@ -378,7 +378,7 @@ bool CRTree::saveTree(const std::string& filename) const
 		LeafNode* ptLN = &leaves[0];
 		for(unsigned int l = 0; l < numLeaves; ++l, ++ptLN) {
 			out << l << std::fixed << " " 
-                << ptLN->mean.at<double>(0, 1) << " " << ptLN->mean.at<double>(0, 1)
+                << ptLN->mean.at<double>(0, 0) << " " << ptLN->mean.at<double>(0, 1)
                 << " " << ptLN->cov.at<double>(0, 0) << " " << ptLN->cov.at<double>(0, 1) 
                 << " " << ptLN->cov.at<double>(1, 0) << " " << ptLN->cov.at<double>(1, 1) << std::endl;
 		}

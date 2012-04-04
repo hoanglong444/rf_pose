@@ -56,25 +56,28 @@ std::tuple<double, double> PoseEstimator::estimate(const cv::Mat& img, double ma
     std::vector<cv::Mat> imagePatches;
     extractPatches(img, imagePatches);
 
-    cv::Mat combinedMean(1, 2, CV_64F);
-    cv::Mat combinedCov(2, 2, CV_64F);
+    cv::Mat combinedMean = cv::Mat::zeros(1, 2, CV_64F);
+    cv::Mat combinedCov = cv::Mat::zeros(2, 2, CV_64F);
 
+    size_t numberVotes = 0;
     for (auto patch : imagePatches) {
         std::vector<const LeafNode*> leaves;
         forest.regression(patch, leaves);    
 
         // Combine the Gaussians from each leaf
         for (auto leaf : leaves) {
-            if (cv::trace(leaf->cov)[0] > maxVariance) {
-                continue;
-            }
-            //std::cout << "Trace " << cv::trace(leaf->cov)[0] << std::endl;
+            //if (cv::determinant(leaf->cov) > maxVariance) {
+            //    continue;
+            //}
+            //std::cout << "Determinant " << cv::determinant(leaf->cov) << std::endl;
             combinedMean += leaf->mean;
             combinedCov += leaf->cov;
+            numberVotes += 1;
         }
     }
 
-    std::cout << "Combined mean" << combinedMean << std::endl;
+    std::cout << "Combined mean " << combinedMean/numberVotes << std::endl;
+    std::cout << "Number of votes " << numberVotes << std::endl;
 
     return std::tuple<double, double>(0.0, 0.0);
 }
