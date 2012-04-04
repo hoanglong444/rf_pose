@@ -11,14 +11,14 @@ public:
      * @param image The image on which keypoints will be extracted and evaluated
      * @return A pair <pitch, yaw>
      */
-    std::tuple<float, float> estimate(const cv::Mat& image, double maxVariance=1000);
+    std::tuple<double, double> estimate(const cv::Mat& image, double maxVariance=1000);
 
     /** 
      * Estimate the pitch and yaw angles for a given image
      * @param filename Path to image on which keypoints will be extracted and evaluated
      * @return A pair <pitch, yaw>
      */
-    std::tuple<float, float> estimate(const std::string& filename, double maxVariance=1000);
+    std::tuple<double, double> estimate(const std::string& filename, double maxVariance=1000);
 
 protected:
     /**

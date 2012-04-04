@@ -218,33 +218,33 @@ double CRTree::measureInformationGain(std::vector<ImagePatch*>& parent, std::vec
     
     // Compute the covariance matrices
     // Two elements: pitch, yaw
-    cv::Mat P(parent.size(), 2, CV_32F);
+    cv::Mat P(parent.size(), 2, CV_64F);
     for (unsigned i = 0; i < parent.size(); i++) {
-        P.at<float>(i, 0) = parent[i]->pitch;
-        P.at<float>(i, 1) = parent[i]->yaw;        
+        P.at<double>(i, 0) = parent[i]->pitch;
+        P.at<double>(i, 1) = parent[i]->yaw;        
     }
-    cv::Mat covP(0, 0, CV_32F);
-    cv::Mat meanP(0, 0, CV_32F);
+    cv::Mat covP(0, 0, CV_64F);
+    cv::Mat meanP(0, 0, CV_64F);
     cv::calcCovarMatrix(P, covP, meanP, CV_COVAR_ROWS | CV_COVAR_NORMAL | CV_COVAR_SCALE);    
     
     // Left branch
-    cv::Mat Pl(partA.size(), 2, CV_32F);
+    cv::Mat Pl(partA.size(), 2, CV_64F);
     for (unsigned i = 0; i < partA.size(); i++) {
-        Pl.at<float>(i, 0) = partA[i]->pitch;
-        Pl.at<float>(i, 1) = partA[i]->yaw;        
+        Pl.at<double>(i, 0) = partA[i]->pitch;
+        Pl.at<double>(i, 1) = partA[i]->yaw;        
     }
-    cv::Mat covPl(0, 0, CV_32F);
-    cv::Mat meanPl(0, 0, CV_32F);
+    cv::Mat covPl(0, 0, CV_64F);
+    cv::Mat meanPl(0, 0, CV_64F);
     cv::calcCovarMatrix(Pl, covPl, meanPl, CV_COVAR_ROWS | CV_COVAR_NORMAL | CV_COVAR_SCALE);        
     
     // Right branch
-    cv::Mat Pr(partB.size(), 2, CV_32F);
+    cv::Mat Pr(partB.size(), 2, CV_64F);
     for (unsigned i = 0; i < partB.size(); i++) {
-        Pr.at<float>(i, 0) = partB[i]->pitch;
-        Pr.at<float>(i, 1) = partB[i]->yaw;        
+        Pr.at<double>(i, 0) = partB[i]->pitch;
+        Pr.at<double>(i, 1) = partB[i]->yaw;        
     }
-    cv::Mat covPr(0, 0, CV_32F);
-    cv::Mat meanPr(0, 0, CV_32F);
+    cv::Mat covPr(0, 0, CV_64F);
+    cv::Mat meanPr(0, 0, CV_64F);
     cv::calcCovarMatrix(Pr, covPr, meanPr, CV_COVAR_ROWS | CV_COVAR_NORMAL | CV_COVAR_SCALE);        
 
     double ig = log(cv::determinant(covP)) - Wr*log(cv::determinant(covPr)) - Wl*log(cv::determinant(covPl));
@@ -265,10 +265,10 @@ void CRTree::makeLeaf(std::vector<ImagePatch*>& data, int node) {
 
 	// Store sigma and mu
 	if (data.size() > 0) {
-    cv::Mat P(data.size(), 2, CV_32F);
+    cv::Mat P(data.size(), 2, CV_64F);
     for (unsigned i = 0; i < data.size(); i++) {
-        P.at<float>(i, 0) = data[i]->pitch;
-        P.at<float>(i, 1) = data[i]->yaw;        
+        P.at<double>(i, 0) = data[i]->pitch;
+        P.at<double>(i, 1) = data[i]->yaw;        
     }
     cv::calcCovarMatrix(P, leaf->cov, leaf->mean, CV_COVAR_ROWS | CV_COVAR_NORMAL | CV_COVAR_SCALE);   
     }
@@ -307,15 +307,15 @@ bool CRTree::loadTree(const std::string& filename)
 		for(unsigned int l = 0; l < numLeaves; ++l, ++ptLN) {
 			file >> dummy;
 
-            cv::Mat meanPr(1, 2, CV_32F);
-			file >> meanPr.at<float>(0, 0);
-            file >> meanPr.at<float>(0, 1);
+            cv::Mat meanPr(1, 2, CV_64F);
+			file >> meanPr.at<double>(0, 0);
+            file >> meanPr.at<double>(0, 1);
 			
-            cv::Mat covPr(2, 2, CV_32F);
-            file >> covPr.at<float>(0, 0);
-            file >> covPr.at<float>(0, 1);
-            file >> covPr.at<float>(1, 0);
-            file >> covPr.at<float>(1, 1);
+            cv::Mat covPr(2, 2, CV_64F);
+            file >> covPr.at<double>(0, 0);
+            file >> covPr.at<double>(0, 1);
+            file >> covPr.at<double>(1, 0);
+            file >> covPr.at<double>(1, 1);
 
             ptLN->mean = meanPr;
             ptLN->cov = covPr;
@@ -377,10 +377,10 @@ bool CRTree::saveTree(const std::string& filename) const
         // Write leaves
 		LeafNode* ptLN = &leaves[0];
 		for(unsigned int l = 0; l < numLeaves; ++l, ++ptLN) {
-			out << l << " " 
-                << ptLN->mean.at<float>(0, 1) << " " << ptLN->mean.at<float>(0, 1)
-                << " " << ptLN->cov.at<float>(0, 0) << " " << ptLN->cov.at<float>(0, 1) 
-                << " " << ptLN->cov.at<float>(1, 0) << " " << ptLN->cov.at<float>(1, 1) << std::endl;
+			out << l << std::fixed << " " 
+                << ptLN->mean.at<double>(0, 1) << " " << ptLN->mean.at<double>(0, 1)
+                << " " << ptLN->cov.at<double>(0, 0) << " " << ptLN->cov.at<double>(0, 1) 
+                << " " << ptLN->cov.at<double>(1, 0) << " " << ptLN->cov.at<double>(1, 1) << std::endl;
 		}
 		out.close();
 		done = true;

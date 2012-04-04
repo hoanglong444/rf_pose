@@ -4,24 +4,23 @@
 
 #include <iostream>
 
-int main(void)
+int main(int argc, char* argv[])
 {
-    DatasetLoader loader("training");
+    if (argc <= 1) {
+        std::cerr << argv[0] << " [path]" << std::endl;
+        return -1;
+    }
+
+    DatasetLoader loader(argv[1]);
     size_t numberImages = loader.getNumberImages();
     std::cout << numberImages << " images available." << std::endl;
     
-//    loader.processRandomImageSubset(100);
-//    auto patches = loader.getPatches();
+    loader.processRandomImageSubset((int) numberImages/2);
+    auto patches = loader.getPatches();
     
-//    CRTree tree;
-//    tree.grow(patches);
-    
-//    tree.saveTree();
-
-//    CRTree tree2("testTrain.txt");
-//    tree2.saveTree("testTrain2.txt");
-//
-    CRForest forest("trees");
+    CRTree tree;
+    tree.grow(patches);
+    tree.saveTree();
 
     return 0;
 }

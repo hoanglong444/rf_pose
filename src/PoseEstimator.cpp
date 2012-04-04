@@ -45,19 +45,19 @@ void PoseEstimator::extractPatches(const cv::Mat& img, std::vector<cv::Mat>& ima
     }
 }
 
-std::tuple<float, float> PoseEstimator::estimate(const std::string& filename, double maxVariance)
+std::tuple<double, double> PoseEstimator::estimate(const std::string& filename, double maxVariance)
 {
     const cv::Mat input = cv::imread(filename, 0);
     return estimate(input);
 }
 
-std::tuple<float, float> PoseEstimator::estimate(const cv::Mat& img, double maxVariance)
+std::tuple<double, double> PoseEstimator::estimate(const cv::Mat& img, double maxVariance)
 {
     std::vector<cv::Mat> imagePatches;
     extractPatches(img, imagePatches);
 
-    cv::Mat combinedMean(1, 2, CV_32F);
-    cv::Mat combinedCov(2, 2, CV_32F);
+    cv::Mat combinedMean(1, 2, CV_64F);
+    cv::Mat combinedCov(2, 2, CV_64F);
 
     for (auto patch : imagePatches) {
         std::vector<const LeafNode*> leaves;
@@ -76,5 +76,5 @@ std::tuple<float, float> PoseEstimator::estimate(const cv::Mat& img, double maxV
 
     std::cout << "Combined mean" << combinedMean << std::endl;
 
-    return std::tuple<float, float>(0.0, 0.0);
+    return std::tuple<double, double>(0.0, 0.0);
 }
